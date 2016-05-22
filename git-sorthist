@@ -1,0 +1,55 @@
+#!/bin/sh
+
+#/***************************************************************************
+# *   Copyright (C) 2016 Daniel Mueller (deso@posteo.net)                   *
+# *                                                                         *
+# *   This program is free software: you can redistribute it and/or modify  *
+# *   it under the terms of the GNU General Public License as published by  *
+# *   the Free Software Foundation, either version 3 of the License, or     *
+# *   (at your option) any later version.                                   *
+# *                                                                         *
+# *   This program is distributed in the hope that it will be useful,       *
+# *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+# *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+# *   GNU General Public License for more details.                          *
+# *                                                                         *
+# *   You should have received a copy of the GNU General Public License     *
+# *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
+# ***************************************************************************/
+
+if [ ${#} -ne 1 ]; then
+  echo "Usage: git-sorthist <sha1>"
+  exit 1
+fi
+
+# We need a temporary file for our purposes.
+file="$(tempfile)"
+
+# Now, put all the dates of commits in the current branch that we want
+# to rebase into this file, in a sorted fashion.
+git log --date=iso --format=format:'%ad' ${1}..HEAD | sort > "${file}"
+
+if [ ${?} -ne 0 ]; then
+  echo "git log failed"
+  rm -f "${file}"
+  exit 1
+fi
+
+# Last we get to the real fun. Rebase everything, adjust the author
+# date using the first date in the temporary file. Afterwards, remove
+# this very date.
+cmd="git commit --amend --reuse-message=HEAD --date=\"\$(head -n1 ${file} | tr -d '\n')\"; \
+     sed -i '1d' \"${file}\""
+git rebase --interactive --keep-empty --exec="${cmd}" ${1}
+
+if [ ${?} -eq 0 ]; then
+  # The file should be empty.
+  if [ ! -z "$(cat ${file})" ]; then
+    echo "${file} not empty; error in script"
+    exit 1
+  else
+    rm -f "${file}"
+  fi
+else
+  rm -f "${file}"
+fi
