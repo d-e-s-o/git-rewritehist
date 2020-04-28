@@ -1,0 +1,42 @@
+#!/bin/sh
+
+#/***************************************************************************
+# *   Copyright (C) 2020 Daniel Mueller (deso@posteo.net)                   *
+# *                                                                         *
+# *   This program is free software: you can redistribute it and/or modify  *
+# *   it under the terms of the GNU General Public License as published by  *
+# *   the Free Software Foundation, either version 3 of the License, or     *
+# *   (at your option) any later version.                                   *
+# *                                                                         *
+# *   This program is distributed in the hope that it will be useful,       *
+# *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+# *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+# *   GNU General Public License for more details.                          *
+# *                                                                         *
+# *   You should have received a copy of the GNU General Public License     *
+# *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
+# ***************************************************************************/
+
+set -u -o pipefail
+
+if [ ${#} -ne 1 ]; then
+  echo "Usage: $(basename ${0}) <sha1>"
+  exit 1
+fi
+
+file="$(tempfile)"
+
+git log --date=iso --format=format:'%ad pick %H %s' ${1}..HEAD | sort | awk '{$1=$2=$3=""; print $0}' > "${file}"
+if [ ${?} -ne 0 ]; then
+  echo "git log failed"
+  rm -f "${file}"
+  exit 1
+fi
+
+GIT_EDITOR="sed -i '1 i\x false'" git rebase --interactive --keep-empty ${1}
+if [ ${?} -eq 0 ]; then
+  rm -f "${file}"
+fi
+mv "${file}" $(git rev-parse --show-toplevel)/.git/rebase-merge/git-rebase-todo
+git rebase --edit-todo
+git rebase --continue
