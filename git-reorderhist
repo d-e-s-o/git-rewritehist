@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #/***************************************************************************
-# *   Copyright (C) 2020 Daniel Mueller (deso@posteo.net)                   *
+# *   Copyright (C) 2020-2021 Daniel Mueller (deso@posteo.net)              *
 # *                                                                         *
 # *   This program is free software: you can redistribute it and/or modify  *
 # *   it under the terms of the GNU General Public License as published by  *
@@ -24,7 +24,7 @@ if [ ${#} -ne 1 ]; then
   exit 1
 fi
 
-file="$(tempfile)"
+file="$(mktemp)"
 
 git log --date=iso --format=format:'%ad pick %H %s' ${1}..HEAD | sort | awk '{$1=$2=$3=""; print $0}' > "${file}"
 if [ ${?} -ne 0 ]; then
