@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 #/***************************************************************************
-# *   Copyright (C) 2021 Daniel Mueller (deso@posteo.net)                   *
+# *   Copyright (C) 2021-2022 Daniel Mueller (deso@posteo.net)              *
 # *                                                                         *
 # *   This program is free software: you can redistribute it and/or modify  *
 # *   it under the terms of the GNU General Public License as published by  *
@@ -104,6 +104,7 @@ def createRebaseLog(start_commit, start_date):
       exec if [ "$(git show --format=format:'%as' --no-patch)" != "{date.isoformat()}" ]; then
         GIT_AUTHOR_DATE="{commit_time}"
         GIT_COMMITTER_DATE="{commit_time}"
+        GPG_SIGNATURE_TIMESTAMP=$(date --date="{commit_time}" +'%s')
           git commit --no-verify --reset-author --amend --allow-empty --reuse-message=HEAD;
       fi
     """).splitlines())
